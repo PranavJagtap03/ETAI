@@ -1,0 +1,267 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  --kavach-navy: #1e3a8a;
+  --kavach-emerald: #10b981;
+  --kavach-crimson: #e11d48;
+  --kavach-amber: #f59e0b;
+  --kavach-slate: #64748b;
+  --kavach-bg: #f8fafc;
+  --kavach-surface: #ffffff;
+  --kavach-border: #e2e8f0;
+  --kavach-text: #0f172a;
+  --kavach-muted: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--kavach-bg);
+  color: var(--kavach-text);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────
+   KAVACH Scrollbar
+───────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 99px;
+}
+
+/* ─────────────────────────────────────────
+   Card Styles
+───────────────────────────────────────── */
+.kavach-card {
+  background: var(--kavach-surface);
+  border: 1px solid var(--kavach-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.kavach-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* ─────────────────────────────────────────
+   Metric Cards
+───────────────────────────────────────── */
+.metric-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+}
+
+.metric-card.navy {
+  --accent-start: #1e3a8a;
+  --accent-end: #3b82f6;
+}
+.metric-card.emerald {
+  --accent-start: #059669;
+  --accent-end: #10b981;
+}
+.metric-card.crimson {
+  --accent-start: #be123c;
+  --accent-end: #e11d48;
+}
+.metric-card.amber {
+  --accent-start: #d97706;
+  --accent-end: #f59e0b;
+}
+
+/* ─────────────────────────────────────────
+   Status Badges
+───────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.badge-low { background: #dcfce7; color: #166534; }
+.badge-medium { background: #fef3c7; color: #92400e; }
+.badge-high { background: #ffedd5; color: #9a3412; }
+.badge-critical { background: #ffe4e6; color: #9f1239; }
+.badge-operational { background: #dbeafe; color: #1e40af; }
+.badge-blocked { background: #ffe4e6; color: #9f1239; }
+.badge-rerouted { background: #d1fae5; color: #065f46; }
+
+/* ─────────────────────────────────────────
+   Pulse Animations
+───────────────────────────────────────── */
+@keyframes pulse-glow-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0.15); }
+}
+@keyframes pulse-glow-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.2); }
+}
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+@keyframes slide-in-up {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse-red { animation: pulse-glow-red 2s infinite; }
+.animate-pulse-amber { animation: pulse-glow-amber 2s infinite; }
+.animate-blink { animation: blink-dot 1.2s infinite; }
+.animate-slide-up { animation: slide-in-up 0.3s ease; }
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+/* ─────────────────────────────────────────
+   Threat Level Borders
+───────────────────────────────────────── */
+.border-threat-low { border-color: #22c55e !important; }
+.border-threat-medium { border-color: #f59e0b !important; }
+.border-threat-high { border-color: #f97316 !important; }
+.border-threat-critical { border-color: #e11d48 !important; }
+
+/* ─────────────────────────────────────────
+   Leaflet Map Overrides
+───────────────────────────────────────── */
+.leaflet-container {
+  font-family: 'Inter', sans-serif !important;
+  border-radius: 12px;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid #e2e8f0;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-size: 13px !important;
+}
+
+.kavach-tooltip {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0f172a;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────
+   Loading Shimmer
+───────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -500px 0; }
+  100% { background-position: 500px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 25%,
+    #e2e8f0 50%,
+    #f1f5f9 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ─────────────────────────────────────────
+   Recharts Overrides
+───────────────────────────────────────── */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-default-tooltip {
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+  font-size: 12px !important;
+}
+
+/* ─────────────────────────────────────────
+   Mono font for data values
+───────────────────────────────────────── */
+.font-mono-data {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum';
+}
+
+/* ─────────────────────────────────────────
+   Route indicator dots
+───────────────────────────────────────── */
+.route-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────
+   Modal backdrop
+───────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: slide-in-up 0.2s ease;
+}
+
+/* Vessel marker pulse */
+@keyframes vessel-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.vessel-pulse { animation: vessel-pulse 2s infinite; }
