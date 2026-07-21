@@ -1,0 +1,340 @@
+{
+  "nodes": [
+    {
+      "id": "ras_tanura",
+      "label": "Ras Tanura",
+      "type": "supplier",
+      "country": "Saudi Arabia",
+      "coordinates": [26.642, 50.158],
+      "capacity_bpd": 3200000,
+      "crude_type": "Sour",
+      "api_gravity": 28.0,
+      "sulfur_pct": 2.5,
+      "description": "World's largest offshore crude oil loading facility"
+    },
+    {
+      "id": "das_island",
+      "label": "Das Island",
+      "type": "supplier",
+      "country": "UAE",
+      "coordinates": [25.143, 52.875],
+      "capacity_bpd": 1800000,
+      "crude_type": "Sweet",
+      "api_gravity": 39.0,
+      "sulfur_pct": 0.8,
+      "description": "UAE's primary offshore oil & gas terminal"
+    },
+    {
+      "id": "novorossiysk",
+      "label": "Novorossiysk",
+      "type": "supplier",
+      "country": "Russia",
+      "coordinates": [44.717, 37.767],
+      "capacity_bpd": 900000,
+      "crude_type": "Sour",
+      "api_gravity": 31.5,
+      "sulfur_pct": 1.5,
+      "description": "Russia's main Black Sea export terminal for CPC blend"
+    },
+    {
+      "id": "strait_of_hormuz",
+      "label": "Strait of Hormuz",
+      "type": "chokepoint",
+      "country": "International",
+      "coordinates": [26.566, 56.250],
+      "throughput_bpd": 21000000,
+      "strategic_risk": "CRITICAL",
+      "description": "~20% of global petroleum liquids transit daily"
+    },
+    {
+      "id": "bab_el_mandeb",
+      "label": "Bab-el-Mandeb",
+      "type": "chokepoint",
+      "country": "International",
+      "coordinates": [12.583, 43.333],
+      "throughput_bpd": 6200000,
+      "strategic_risk": "HIGH",
+      "description": "Red Sea gateway; Houthi threat zone"
+    },
+    {
+      "id": "cape_of_good_hope",
+      "label": "Cape of Good Hope",
+      "type": "chokepoint",
+      "country": "South Africa",
+      "coordinates": [-34.358, 18.472],
+      "throughput_bpd": 5800000,
+      "strategic_risk": "LOW",
+      "description": "Alternate routing bypassing Suez & Hormuz — +12 days transit"
+    },
+    {
+      "id": "suez_canal",
+      "label": "Suez Canal",
+      "type": "chokepoint",
+      "country": "Egypt",
+      "coordinates": [30.585, 32.327],
+      "throughput_bpd": 5500000,
+      "strategic_risk": "MEDIUM",
+      "description": "Critical Mediterranean-to-Asia shortcut"
+    },
+    {
+      "id": "jamnagar_port",
+      "label": "Jamnagar Port (Sikka)",
+      "type": "entry_port",
+      "country": "India",
+      "coordinates": [22.470, 70.050],
+      "capacity_bpd": 1400000,
+      "description": "Dedicated port serving Reliance Jamnagar refinery"
+    },
+    {
+      "id": "mumbai_port",
+      "label": "Mumbai Port (JNPT)",
+      "type": "entry_port",
+      "country": "India",
+      "coordinates": [18.950, 72.883],
+      "capacity_bpd": 900000,
+      "description": "India's primary western commercial crude terminal"
+    },
+    {
+      "id": "new_mangalore_port",
+      "label": "New Mangalore Port",
+      "type": "entry_port",
+      "country": "India",
+      "coordinates": [12.926, 74.795],
+      "capacity_bpd": 650000,
+      "description": "South India's primary petroleum import gateway"
+    },
+    {
+      "id": "jamnagar_refinery",
+      "label": "Jamnagar Refinery",
+      "type": "refinery",
+      "country": "India",
+      "coordinates": [22.333, 69.883],
+      "capacity_bpd": 1240000,
+      "configured_crude": "Sour",
+      "nelson_complexity": 11.8,
+      "description": "World's largest refining complex (Reliance Industries)"
+    },
+    {
+      "id": "koyali_refinery",
+      "label": "Koyali Refinery (IOCL)",
+      "type": "refinery",
+      "country": "India",
+      "coordinates": [22.355, 73.155],
+      "capacity_bpd": 274000,
+      "configured_crude": "Mixed",
+      "nelson_complexity": 7.2,
+      "description": "IOCL Gujarat refinery near Vadodara"
+    },
+    {
+      "id": "mrpl_mangalore",
+      "label": "MRPL Mangalore",
+      "type": "refinery",
+      "country": "India",
+      "coordinates": [12.983, 74.846],
+      "capacity_bpd": 300000,
+      "configured_crude": "Sour",
+      "nelson_complexity": 9.0,
+      "description": "Mangalore Refinery and Petrochemicals Ltd."
+    }
+  ],
+  "edges": [
+    {
+      "id": "rt_hormuz",
+      "from": "ras_tanura",
+      "to": "strait_of_hormuz",
+      "distance_nm": 370,
+      "cost_per_barrel": 0.85,
+      "capacity_bpd": 3000000,
+      "type": "Sour",
+      "transit_days": 1,
+      "is_primary": true
+    },
+    {
+      "id": "das_hormuz",
+      "from": "das_island",
+      "to": "strait_of_hormuz",
+      "distance_nm": 520,
+      "cost_per_barrel": 0.95,
+      "capacity_bpd": 1800000,
+      "type": "Sweet",
+      "transit_days": 1,
+      "is_primary": true
+    },
+    {
+      "id": "hormuz_jamnagar",
+      "from": "strait_of_hormuz",
+      "to": "jamnagar_port",
+      "distance_nm": 1200,
+      "cost_per_barrel": 1.80,
+      "capacity_bpd": 1400000,
+      "type": "Mixed",
+      "transit_days": 4,
+      "is_primary": true
+    },
+    {
+      "id": "hormuz_mumbai",
+      "from": "strait_of_hormuz",
+      "to": "mumbai_port",
+      "distance_nm": 1600,
+      "cost_per_barrel": 2.10,
+      "capacity_bpd": 900000,
+      "type": "Mixed",
+      "transit_days": 5,
+      "is_primary": true
+    },
+    {
+      "id": "hormuz_mangalore",
+      "from": "strait_of_hormuz",
+      "to": "new_mangalore_port",
+      "distance_nm": 1800,
+      "cost_per_barrel": 2.25,
+      "capacity_bpd": 650000,
+      "type": "Mixed",
+      "transit_days": 5,
+      "is_primary": true
+    },
+    {
+      "id": "jamnagar_refinery_link",
+      "from": "jamnagar_port",
+      "to": "jamnagar_refinery",
+      "distance_nm": 35,
+      "cost_per_barrel": 0.20,
+      "capacity_bpd": 1240000,
+      "type": "Mixed",
+      "transit_days": 0,
+      "is_primary": true
+    },
+    {
+      "id": "mumbai_koyali",
+      "from": "mumbai_port",
+      "to": "koyali_refinery",
+      "distance_nm": 120,
+      "cost_per_barrel": 0.35,
+      "capacity_bpd": 274000,
+      "type": "Mixed",
+      "transit_days": 1,
+      "is_primary": true
+    },
+    {
+      "id": "mangalore_mrpl",
+      "from": "new_mangalore_port",
+      "to": "mrpl_mangalore",
+      "distance_nm": 10,
+      "cost_per_barrel": 0.15,
+      "capacity_bpd": 300000,
+      "type": "Sour",
+      "transit_days": 0,
+      "is_primary": true
+    },
+    {
+      "id": "novorossiysk_suez",
+      "from": "novorossiysk",
+      "to": "suez_canal",
+      "distance_nm": 2100,
+      "cost_per_barrel": 3.50,
+      "capacity_bpd": 800000,
+      "type": "Sour",
+      "transit_days": 7,
+      "is_primary": false
+    },
+    {
+      "id": "suez_jamnagar",
+      "from": "suez_canal",
+      "to": "jamnagar_port",
+      "distance_nm": 3900,
+      "cost_per_barrel": 4.20,
+      "capacity_bpd": 600000,
+      "type": "Sour",
+      "transit_days": 13,
+      "is_primary": false
+    },
+    {
+      "id": "suez_mumbai",
+      "from": "suez_canal",
+      "to": "mumbai_port",
+      "distance_nm": 4200,
+      "cost_per_barrel": 4.50,
+      "capacity_bpd": 500000,
+      "type": "Sour",
+      "transit_days": 14,
+      "is_primary": false
+    },
+    {
+      "id": "ras_tanura_cape",
+      "from": "ras_tanura",
+      "to": "cape_of_good_hope",
+      "distance_nm": 7800,
+      "cost_per_barrel": 8.50,
+      "capacity_bpd": 2000000,
+      "type": "Sour",
+      "transit_days": 22,
+      "is_primary": false
+    },
+    {
+      "id": "das_cape",
+      "from": "das_island",
+      "to": "cape_of_good_hope",
+      "distance_nm": 7600,
+      "cost_per_barrel": 8.20,
+      "capacity_bpd": 1500000,
+      "type": "Sweet",
+      "transit_days": 21,
+      "is_primary": false
+    },
+    {
+      "id": "cape_jamnagar",
+      "from": "cape_of_good_hope",
+      "to": "jamnagar_port",
+      "distance_nm": 5200,
+      "cost_per_barrel": 5.80,
+      "capacity_bpd": 1000000,
+      "type": "Mixed",
+      "transit_days": 15,
+      "is_primary": false
+    },
+    {
+      "id": "cape_mumbai",
+      "from": "cape_of_good_hope",
+      "to": "mumbai_port",
+      "distance_nm": 5400,
+      "cost_per_barrel": 6.10,
+      "capacity_bpd": 800000,
+      "type": "Mixed",
+      "transit_days": 15,
+      "is_primary": false
+    },
+    {
+      "id": "hormuz_bab",
+      "from": "strait_of_hormuz",
+      "to": "bab_el_mandeb",
+      "distance_nm": 2300,
+      "cost_per_barrel": 3.20,
+      "capacity_bpd": 4000000,
+      "type": "Mixed",
+      "transit_days": 7,
+      "is_primary": false
+    },
+    {
+      "id": "bab_suez",
+      "from": "bab_el_mandeb",
+      "to": "suez_canal",
+      "distance_nm": 1200,
+      "cost_per_barrel": 2.10,
+      "capacity_bpd": 3500000,
+      "type": "Mixed",
+      "transit_days": 4,
+      "is_primary": false
+    },
+    {
+      "id": "das_bab_bypass",
+      "from": "das_island",
+      "to": "bab_el_mandeb",
+      "distance_nm": 2600,
+      "cost_per_barrel": 3.80,
+      "capacity_bpd": 1200000,
+      "type": "Sweet",
+      "transit_days": 8,
+      "is_primary": false
+    }
+  ]
+}

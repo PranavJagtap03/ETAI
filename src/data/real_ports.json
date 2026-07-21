@@ -1,0 +1,41 @@
+{
+  "jamnagar_port": {
+    "unlocode": "INJGA",
+    "official_name": "Sikka Marine Terminal (Jamnagar)",
+    "operator": "Reliance Ports & Terminals Ltd.",
+    "channels_count": 2,
+    "max_draft_m": 22.5,
+    "max_dwt_tons": 3200000,
+    "oil_terminal_capacity_mtpa": 78.0,
+    "turnaround_time_hrs": 38.5,
+    "avg_waiting_days": 1.8,
+    "active_tugs": 6,
+    "security_level": "ISPS Level 1"
+  },
+  "mumbai_port": {
+    "unlocode": "INBOM",
+    "official_name": "Jawaharlal Nehru Port & Mumbai Port Trust",
+    "operator": "Mumbai Port Trust (MbPT)",
+    "channels_count": 3,
+    "max_draft_m": 14.5,
+    "max_dwt_tons": 1500000,
+    "oil_terminal_capacity_mtpa": 32.5,
+    "turnaround_time_hrs": 42.0,
+    "avg_waiting_days": 2.4,
+    "active_tugs": 8,
+    "security_level": "ISPS Level 1"
+  },
+  "new_mangalore_port": {
+    "unlocode": "INIXE",
+    "official_name": "New Mangalore Port Authority",
+    "operator": "NMPA Oil Jetty Division",
+    "channels_count": 1,
+    "max_draft_m": 15.1,
+    "max_dwt_tons": 1200000,
+    "oil_terminal_capacity_mtpa": 19.5,
+    "turnaround_time_hrs": 31.0,
+    "avg_waiting_days": 1.2,
+    "active_tugs": 4,
+    "security_level": "ISPS Level 1"
+  }
+}
