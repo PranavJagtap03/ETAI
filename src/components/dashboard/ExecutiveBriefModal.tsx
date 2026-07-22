@@ -1,7 +1,8 @@
 "use client";
 
-import { X, FileText, AlertTriangle, Shield, Zap } from "lucide-react";
+import { X, FileText, AlertTriangle, Shield, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import { ThreatLevel, THREAT_COLORS } from "@/lib/config";
+import { useState } from "react";
 
 interface RiskAssessment {
   impacted_chokepoint: string;
@@ -22,6 +23,25 @@ interface ExecutiveBriefModalProps {
   executiveBrief: string;
   isGenerating: boolean;
   onGenerateBrief: () => void;
+  signalToRecommendationMs?: number | null;
+  sensitivityBand?: {
+    recoveryRangeLow: number;
+    recoveryRangeHigh: number;
+    daysSavedLow: number;
+    daysSavedHigh: number;
+    gdpLossLow: number;
+    gdpLossHigh: number;
+  } | null;
+  assumptions?: {
+    rerouteRecoveryPct: number;
+    domesticProductionPct: number;
+    gdpFrictionUsdPerBarrel: number;
+    fuelPriceSpikeMultiplier: number;
+    refineryRunrateMultiplier: number;
+    sprBaselineDays: number;
+    sprBaselineBarrels: number;
+  } | null;
+  estimatedDisruptionDays?: number;
 }
 
 export function ExecutiveBriefModal({
@@ -32,7 +52,12 @@ export function ExecutiveBriefModal({
   executiveBrief,
   isGenerating,
   onGenerateBrief,
+  signalToRecommendationMs = null,
+  sensitivityBand = null,
+  assumptions = null,
+  estimatedDisruptionDays,
 }: ExecutiveBriefModalProps) {
+  const [showAssumptions, setShowAssumptions] = useState(false);
   if (!isOpen) return null;
 
   const color = riskAssessment
@@ -58,7 +83,14 @@ export function ExecutiveBriefModal({
               <h2 className="text-base font-bold text-slate-900">
                 Executive Intelligence Brief
               </h2>
-              <p className="text-xs text-slate-500">{scenarioLabel}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-slate-500">{scenarioLabel}</p>
+                {signalToRecommendationMs !== null && signalToRecommendationMs !== undefined && (
+                  <span className="text-xs font-mono-data bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-bold">
+                    ⚡ {(signalToRecommendationMs / 1000).toFixed(1)}s signal→rec
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -188,6 +220,64 @@ export function ExecutiveBriefModal({
             </div>
           )}
         </div>
+
+        {/* Assumptions Disclosure */}
+        {assumptions && (
+          <div className="mx-5 mb-2 rounded-xl border border-slate-200 overflow-hidden">
+            <button
+              onClick={() => setShowAssumptions((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors text-xs font-semibold text-slate-600"
+            >
+              <span>Model Assumptions &amp; Sensitivity</span>
+              {showAssumptions ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+            {showAssumptions && (
+              <div className="p-4 bg-white grid grid-cols-2 gap-2">
+                {[
+                  { label: "Reroute Recovery", value: `${(assumptions.rerouteRecoveryPct * 100).toFixed(0)}%`, note: "of disrupted supply recovered" },
+                  { label: "Domestic Production", value: `${(assumptions.domesticProductionPct * 100).toFixed(0)}%`, note: "of demand met locally" },
+                  { label: "GDP Friction", value: `$${assumptions.gdpFrictionUsdPerBarrel}/bbl`, note: "economic loss per barrel deficit" },
+                  { label: "Fuel Multiplier", value: `${assumptions.fuelPriceSpikeMultiplier}×`, note: "applied to supply deficit %" },
+                  { label: "Refinery Sensitivity", value: `${assumptions.refineryRunrateMultiplier}×`, note: "throughput impact factor" },
+                  { label: "SPR Baseline", value: `${assumptions.sprBaselineDays}d`, note: `${(assumptions.sprBaselineBarrels / 1e6).toFixed(1)}M barrels` },
+                  ...(estimatedDisruptionDays !== undefined
+                    ? [{ label: "Est. Disruption", value: `${estimatedDisruptionDays}d`, note: "Gemini AI estimate" }]
+                    : []),
+                ].map((row) => (
+                  <div key={row.label} className="rounded-lg bg-slate-50 p-2 border border-slate-100">
+                    <div className="text-xs font-semibold text-slate-700">{row.value}</div>
+                    <div className="text-xs text-slate-500">{row.label}</div>
+                    <div className="text-slate-400" style={{ fontSize: 10 }}>{row.note}</div>
+                  </div>
+                ))}
+
+                {sensitivityBand && (
+                  <div className="col-span-2 rounded-lg bg-blue-50 border border-blue-100 p-3 mt-1">
+                    <div className="text-xs font-bold text-blue-700 mb-1">±20% Recovery Sensitivity Band</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-slate-500">SPR days saved: </span>
+                        <span className="font-mono-data font-bold text-slate-800">
+                          {sensitivityBand.daysSavedLow}–{sensitivityBand.daysSavedHigh}d
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Daily GDP loss: </span>
+                        <span className="font-mono-data font-bold text-slate-800">
+                          ${(sensitivityBand.gdpLossLow / 1e6).toFixed(0)}M–${(sensitivityBand.gdpLossHigh / 1e6).toFixed(0)}M
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="p-5 border-t border-slate-100">

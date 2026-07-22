@@ -6,6 +6,20 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, GEMINI_API_KEY, ThreatLevel } from "@/lib/config";
+import networkData from "@/data/network.json";
+
+// ── Supplier node list helper ──────────────────────────────────
+
+/**
+ * Returns the current list of supplier node labels from network.json.
+ * Injected into the Gemini prompt so recommendations are always
+ * grounded in the actual graph — never hallucinated.
+ */
+export function getAvailableSupplierNames(): string[] {
+  return (networkData.nodes as Array<{ type: string; label: string }>)
+    .filter((n) => n.type === "supplier")
+    .map((n) => n.label);
+}
 
 // ── Output Schema ─────────────────────────────────────────────
 
@@ -28,7 +42,10 @@ export interface RiskAssessment {
 
 // ── Prompt Template ───────────────────────────────────────────
 
-function buildPrompt(newsText: string): string {
+function buildPrompt(newsText: string, availableSuppliers?: string[]): string {
+  const supplierList = availableSuppliers?.join(", ") ??
+    "Saudi Arabia (Ras Tanura), UAE (Das Island), Russia (Novorossiysk), Iraq (Basra Terminal), Nigeria (Bonny Terminal), Angola (Cabinda/Nemba Terminal), USA (Houston/Corpus Christi)";
+
   return `You are KAVACH, an AI risk analyst for India's energy security command center.
 
 Analyze the following news/scenario and extract structured intelligence about its impact on India's crude oil supply chain.
@@ -39,7 +56,9 @@ India imports 88% of its crude oil. Key chokepoints:
 - Suez Canal: Egypt shortcut, can be blocked
 - Cape of Good Hope: Fallback bypass route (+12 days)
 
-Primary Indian suppliers: Saudi Arabia (Ras Tanura), UAE (Das Island), Russia (Novorossiysk)
+Currently modeled suppliers (ONLY use these in your recommendations):
+${supplierList}
+
 Main Indian refineries: Jamnagar (Reliance, 1.24M BPD), MRPL Mangalore (300K BPD), IOCL Koyali (274K BPD)
 
 NEWS/SCENARIO:
@@ -53,8 +72,8 @@ Return ONLY a valid JSON object matching this exact schema (no markdown, no expl
   "threat_level": "<LOW|MEDIUM|HIGH|CRITICAL>",
   "risk_score": <0.0 to 1.0>,
   "event_summary": "<2-3 sentence summary of the event and its direct impact on India>",
-  "recommended_action": "<specific actionable recommendation for India's energy ministry>",
-  "affected_suppliers": ["<supplier name>"],
+  "recommended_action": "<specific actionable recommendation for India's energy ministry, referencing ONLY the suppliers listed above>",
+  "affected_suppliers": ["<supplier name from the list above>"],
   "estimated_disruption_days": <integer 0-180>,
   "india_impact_severity": "<MINIMAL|MODERATE|SEVERE|CRISIS>"
 }`;
@@ -73,9 +92,12 @@ export async function parseRiskFromNews(
 
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
+  // Inject live supplier list into prompt
+  const availableSuppliers = getAvailableSupplierNames();
+
   const response = await ai.models.generateContent({
     model: GEMINI_MODEL,
-    contents: buildPrompt(newsText),
+    contents: buildPrompt(newsText, availableSuppliers),
     config: {
       temperature: 0.1, // Low temperature for deterministic structured output
       maxOutputTokens: 1024,

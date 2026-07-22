@@ -495,7 +495,18 @@ export async function GET(req: NextRequest) {
   const scenarioId = (searchParams.get("scenario") ?? "BASELINE") as ScenarioId;
 
   const scenario = SCENARIOS[scenarioId] ?? SCENARIOS.BASELINE;
-  const blockedNodes: string[] = [...(scenario.blocked_nodes ?? [])];
+  const scenarioBlockedNodes: string[] = [...(scenario.blocked_nodes ?? [])];
+
+  // Support dynamic mode: client passes raw blocked_nodes as comma-separated query param
+  const dynamicBlockedParam = searchParams.get("blockedNodes");
+  const dynamicBlockedNodes: string[] = dynamicBlockedParam
+    ? dynamicBlockedParam.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  // Merge: dynamic nodes take priority; union with scenario nodes
+  const blockedNodes: string[] = Array.from(
+    new Set([...scenarioBlockedNodes, ...dynamicBlockedNodes])
+  );
 
   // Build route features for GeoJSON from explicitly defined SEA_ROUTES
   const routeFeatures = Object.values(SEA_ROUTES).map((route) => {
@@ -623,8 +634,8 @@ export async function GET(req: NextRequest) {
         type: rPort.portType === "export" ? "supplier" : "entry_port",
         isBlocked: blockedNodes.includes(rPort.id),
         country: rPort.country,
-        capacity_bpd: null, 
-        strategic_risk: null,
+        capacity_bpd: undefined,
+        strategic_risk: undefined,
         description: rPort.role,
         wpi_details: null
       },
@@ -633,7 +644,7 @@ export async function GET(req: NextRequest) {
         coordinates: [rPort.lng, rPort.lat],
       }
     };
-  }).filter(Boolean);
+  }).filter((f): f is NonNullable<typeof f> => f !== null);
 
   nodeFeatures.push(...regionalNodeFeatures);
 

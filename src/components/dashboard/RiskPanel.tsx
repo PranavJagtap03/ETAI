@@ -2,6 +2,7 @@
 
 import { ThreatLevel, THREAT_COLORS } from "@/lib/config";
 import { TrendingDown, BarChart3, Route, AlertCircle, Fuel, Factory, DollarSign } from "lucide-react";
+import { AlternativesPanel } from "@/components/dashboard/AlternativesPanel";
 
 interface RiskPanelProps {
   threatLevel: ThreatLevel;
@@ -17,6 +18,19 @@ interface RiskPanelProps {
   refineryHitLabel: string;
   gdpLossLabel: string;
   macroAlertLevel: string;
+  alternatives?: Array<{
+    id: string;
+    label: string;
+    totalCostPerBarrel: number;
+    totalTransitDays: number;
+    capacityBPD: number;
+    crudeType: string;
+    gradeMismatch: boolean;
+    gradeSurchargePBL: number;
+    gradeDelayDays: number;
+    rationale: string;
+    status: string;
+  }>;
 }
 
 function MiniBar({ value, color }: { value: number; color: string }) {
@@ -44,6 +58,7 @@ export function RiskPanel({
   refineryHitLabel,
   gdpLossLabel,
   macroAlertLevel,
+  alternatives,
 }: RiskPanelProps) {
   const color = THREAT_COLORS[threatLevel];
 
@@ -150,6 +165,9 @@ export function RiskPanel({
           </div>
         </div>
       )}
+
+      {/* Top alternatives */}
+      <AlternativesPanel alternatives={alternatives ?? []} />
     </div>
   );
 }

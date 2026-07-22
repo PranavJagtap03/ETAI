@@ -55,7 +55,7 @@ export function ImportMixPanel({ supplyDeficitPct }: { supplyDeficitPct: number 
         </div>
         <div className="flex gap-3 items-center">
           <div style={{ width: 100, height: 100, flexShrink: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <PieChart>
                 <Pie
                   data={IMPORT_MIX_BASE}
