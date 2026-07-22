@@ -15,6 +15,7 @@ interface LiveTickerProps {
   visiblePanels: string[];
   onTogglePanel: (id: string) => void;
   allPanels: Array<{ id: string; label: string }>;
+  signalToRecommendationMs?: number | null;
 }
 
 // Mock live market data with slight random drift
@@ -56,6 +57,7 @@ export function LiveTicker({
   visiblePanels,
   onTogglePanel,
   allPanels,
+  signalToRecommendationMs = null,
 }: LiveTickerProps) {
   const tc = THREAT_CONFIG[threatLevel];
   const brent = useMockPrice(82.4, 0.6);
@@ -133,6 +135,11 @@ export function LiveTicker({
         <span className="text-xs font-semibold text-slate-700">{scenarioLabel}</span>
         {isSimulating && (
           <div className="w-3.5 h-3.5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        )}
+        {signalToRecommendationMs !== null && signalToRecommendationMs !== undefined && (
+          <span className="text-xs font-mono-data bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-bold">
+            ⚡ {(signalToRecommendationMs / 1000).toFixed(1)}s
+          </span>
         )}
       </div>
 

@@ -113,5 +113,5 @@ export const ROUTE_COLORS = {
 };
 
 // ── Gemini Configuration ─────────────────────────────────────
-export const GEMINI_MODEL = "gemini-2.5-flash-lite";
+export const GEMINI_MODEL = "gemini-1.5-flash";
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";

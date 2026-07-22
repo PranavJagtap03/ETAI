@@ -73,36 +73,48 @@ export class MacroImpactCalculator {
    * @param avgRerouteCostIncreasePerBBL - additional USD/barrel from rerouting
    * @param additionalTransitDays - extra days from alternate routing
    * @param scenarioId - scenario identifier
+   * @param startDate - simulation date
+   * @param overrides - optional assumption overrides
    */
   compute(
     supplyDeficitPct: number,
     avgRerouteCostIncreasePerBBL: number,
     additionalTransitDays: number,
     scenarioId: string,
-    startDate: Date = new Date()
+    startDate: Date = new Date(),
+    overrides?: {
+      gdpFrictionUsdPerBarrel?: number;
+      fuelPriceSpikeMultiplier?: number;
+      refineryRunrateMultiplier?: number;
+    }
   ): MacroImpactResult {
 
     // Clamp deficit to valid range
     const deficit = Math.min(1, Math.max(0, supplyDeficitPct));
 
+    // Resolve overrideable constants
+    const gdpFriction = overrides?.gdpFrictionUsdPerBarrel ?? GDP_FRICTION_USD_PER_BARREL;
+    const fuelMultiplier = overrides?.fuelPriceSpikeMultiplier ?? FUEL_PRICE_SPIKE_MULTIPLIER;
+    const refineryMultiplier = overrides?.refineryRunrateMultiplier ?? REFINERY_RUNRATE_MULTIPLIER;
+
     // ── Core Metrics ────────────────────────────────────────
 
     const supplyDeficitBPD = Math.round(deficit * INDIA_DAILY_DEMAND_BPD);
 
-    // Domestic Fuel Price Spike % = Deficit% × 1.45
+    // Domestic Fuel Price Spike % = Deficit% × fuelMultiplier
     const fuelPriceSpikePercentage =
-      Math.round(deficit * FUEL_PRICE_SPIKE_MULTIPLIER * 1000) / 10;
+      Math.round(deficit * fuelMultiplier * 1000) / 10;
 
-    // Refinery Run Rate Hit % = Deficit% × 0.85
+    // Refinery Run Rate Hit % = Deficit% × refineryMultiplier
     const refineryRunRateDropPct =
-      Math.round(deficit * REFINERY_RUNRATE_MULTIPLIER * 1000) / 10;
+      Math.round(deficit * refineryMultiplier * 1000) / 10;
 
     const estimatedRefineryLossBPD = Math.round(
-      deficit * REFINERY_RUNRATE_MULTIPLIER * 1_500_000 // total refinery capacity ~1.5M BPD
+      deficit * refineryMultiplier * 1_500_000 // total refinery capacity ~1.5M BPD
     );
 
-    // Daily GDP Impact = Deficit BPD × $42
-    const dailyGDPLossUSD = supplyDeficitBPD * GDP_FRICTION_USD_PER_BARREL;
+    // Daily GDP Impact = Deficit BPD × gdpFriction
+    const dailyGDPLossUSD = supplyDeficitBPD * gdpFriction;
 
     // Crude breakeven adjusted for rerouting cost
     const baseBrentEquiv = 80; // baseline Brent price USD/BBL
@@ -127,7 +139,7 @@ export class MacroImpactCalculator {
 
       const gdpLoss =
         Math.round(dayDeficit * INDIA_DAILY_DEMAND_BPD) *
-        GDP_FRICTION_USD_PER_BARREL;
+        gdpFriction;
 
       cumulativeGDP += gdpLoss;
 
@@ -139,8 +151,8 @@ export class MacroImpactCalculator {
         date: date.toISOString().split("T")[0],
         gdpLossUSD: gdpLoss,
         fuelPriceSpikeAdditionalPct:
-          Math.round(dayDeficit * FUEL_PRICE_SPIKE_MULTIPLIER * 1000) / 10,
-        refineryRunRatePct: Math.round((1 - dayDeficit * REFINERY_RUNRATE_MULTIPLIER) * 100),
+          Math.round(dayDeficit * fuelMultiplier * 1000) / 10,
+        refineryRunRatePct: Math.round((1 - dayDeficit * refineryMultiplier) * 100),
         cumulativeGDPLossUSD: cumulativeGDP,
       });
     }

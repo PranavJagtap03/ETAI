@@ -37,6 +37,54 @@
       "description": "Russia's main Black Sea export terminal for CPC blend"
     },
     {
+      "id": "basra_terminal",
+      "label": "Basra Terminal",
+      "type": "supplier",
+      "country": "Iraq",
+      "coordinates": [29.683, 48.816],
+      "capacity_bpd": 3500000,
+      "crude_type": "Sour",
+      "api_gravity": 29.5,
+      "sulfur_pct": 2.2,
+      "description": "Iraq's main southern crude export terminal; Basra Heavy & Medium grades"
+    },
+    {
+      "id": "bonny_terminal",
+      "label": "Bonny Terminal",
+      "type": "supplier",
+      "country": "Nigeria",
+      "coordinates": [4.44, 7.15],
+      "capacity_bpd": 2000000,
+      "crude_type": "Sweet",
+      "api_gravity": 33.0,
+      "sulfur_pct": 0.14,
+      "description": "Nigeria's primary crude export terminal; Bonny Light & Qua Iboe sweet grades"
+    },
+    {
+      "id": "cabinda_terminal",
+      "label": "Cabinda / Nemba Terminal",
+      "type": "supplier",
+      "country": "Angola",
+      "coordinates": [-5.55, 12.20],
+      "capacity_bpd": 1200000,
+      "crude_type": "Sweet",
+      "api_gravity": 31.0,
+      "sulfur_pct": 0.22,
+      "description": "Angola's primary offshore crude terminal; Cabinda and Nemba sweet grades"
+    },
+    {
+      "id": "houston_port",
+      "label": "Houston / Corpus Christi",
+      "type": "supplier",
+      "country": "USA",
+      "coordinates": [29.73, -95.15],
+      "capacity_bpd": 1500000,
+      "crude_type": "Sweet",
+      "api_gravity": 42.0,
+      "sulfur_pct": 0.31,
+      "description": "US Gulf Coast WTI-grade light sweet crude export hub"
+    },
+    {
       "id": "strait_of_hormuz",
       "label": "Strait of Hormuz",
       "type": "chokepoint",
@@ -157,6 +205,17 @@
       "cost_per_barrel": 0.95,
       "capacity_bpd": 1800000,
       "type": "Sweet",
+      "transit_days": 1,
+      "is_primary": true
+    },
+    {
+      "id": "basra_hormuz",
+      "from": "basra_terminal",
+      "to": "strait_of_hormuz",
+      "distance_nm": 280,
+      "cost_per_barrel": 0.70,
+      "capacity_bpd": 3000000,
+      "type": "Sour",
       "transit_days": 1,
       "is_primary": true
     },
@@ -282,6 +341,50 @@
       "is_primary": false
     },
     {
+      "id": "basra_cape",
+      "from": "basra_terminal",
+      "to": "cape_of_good_hope",
+      "distance_nm": 8100,
+      "cost_per_barrel": 8.80,
+      "capacity_bpd": 1800000,
+      "type": "Sour",
+      "transit_days": 23,
+      "is_primary": false
+    },
+    {
+      "id": "bonny_cape",
+      "from": "bonny_terminal",
+      "to": "cape_of_good_hope",
+      "distance_nm": 3800,
+      "cost_per_barrel": 4.20,
+      "capacity_bpd": 1200000,
+      "type": "Sweet",
+      "transit_days": 11,
+      "is_primary": false
+    },
+    {
+      "id": "cabinda_cape",
+      "from": "cabinda_terminal",
+      "to": "cape_of_good_hope",
+      "distance_nm": 3200,
+      "cost_per_barrel": 3.60,
+      "capacity_bpd": 900000,
+      "type": "Sweet",
+      "transit_days": 9,
+      "is_primary": false
+    },
+    {
+      "id": "houston_cape",
+      "from": "houston_port",
+      "to": "cape_of_good_hope",
+      "distance_nm": 8900,
+      "cost_per_barrel": 9.80,
+      "capacity_bpd": 800000,
+      "type": "Sweet",
+      "transit_days": 25,
+      "is_primary": false
+    },
+    {
       "id": "cape_jamnagar",
       "from": "cape_of_good_hope",
       "to": "jamnagar_port",
@@ -301,6 +404,17 @@
       "capacity_bpd": 800000,
       "type": "Mixed",
       "transit_days": 15,
+      "is_primary": false
+    },
+    {
+      "id": "cape_mangalore",
+      "from": "cape_of_good_hope",
+      "to": "new_mangalore_port",
+      "distance_nm": 5600,
+      "cost_per_barrel": 6.30,
+      "capacity_bpd": 500000,
+      "type": "Mixed",
+      "transit_days": 16,
       "is_primary": false
     },
     {

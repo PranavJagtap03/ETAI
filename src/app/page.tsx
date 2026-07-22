@@ -12,18 +12,36 @@ import { IntelligencePanel } from "@/components/dashboard/IntelligencePanel";
 import { ImportMixPanel } from "@/components/dashboard/ImportMixPanel";
 import { ExecutiveBriefModal } from "@/components/dashboard/ExecutiveBriefModal";
 import {
-  AlertTriangle, Shield, Database, Ship, Brain, Globe2, Satellite,
+  AlertTriangle, Shield, Database, Ship, Brain, Globe2,
 } from "lucide-react";
-import { ScenarioId, ThreatLevel, SCENARIOS, THREAT_COLORS } from "@/lib/config";
+import { ScenarioId, ThreatLevel, SCENARIOS, THREAT_COLORS, RISK_THRESHOLDS } from "@/lib/config";
+import { chokepointToNodeIds, buildDynamicScenarioLabel } from "@/lib/engine/signalMapper";
+import { useNewsFeed, type LiveAlert } from "@/hooks/useNewsFeed";
+import type { RiskAssessment } from "@/lib/agents/riskParser";
 
 // ── Types ──────────────────────────────────────────────────
 
+interface AlternativeRoute {
+  id: string;
+  label: string;
+  totalCostPerBarrel: number;
+  totalTransitDays: number;
+  capacityBPD: number;
+  crudeType: string;
+  gradeMismatch: boolean;
+  gradeSurchargePBL: number;
+  gradeDelayDays: number;
+  rationale: string;
+  status: string;
+}
+
 interface SimulationData {
-  scenario: { id: string; label: string; description: string; threat_level: ThreatLevel; risk_score: number };
+  scenario: { id: string; label: string; description: string; threat_level: ThreatLevel; risk_score: number; source_article_url?: string };
   rerouting: {
     blockedBPD: number; activeBPD: number; unservedBPD: number; supplyDeficitPct: number;
     avgRerouteCostIncrease: number; avgRerouteDelayDays: number;
     routeCount: number; reroutedCount: number; blockedCount: number;
+    top3Alternatives?: AlternativeRoute[];
   };
   spr: {
     initialBarrels: number; initialDays: number;
@@ -38,6 +56,24 @@ interface SimulationData {
     crudePriceBreakevenUSD: number; additionalImportCostPerDay: number; dailyImpactSeries: unknown[];
   };
   network: { nodes: unknown[]; edges: unknown[] };
+  signalToRecommendationMs?: number | null;
+  sensitivityBand?: {
+    recoveryRangeLow: number;
+    recoveryRangeHigh: number;
+    daysSavedLow: number;
+    daysSavedHigh: number;
+    gdpLossLow: number;
+    gdpLossHigh: number;
+  } | null;
+  assumptions?: {
+    rerouteRecoveryPct: number;
+    domesticProductionPct: number;
+    gdpFrictionUsdPerBarrel: number;
+    fuelPriceSpikeMultiplier: number;
+    refineryRunrateMultiplier: number;
+    sprBaselineDays: number;
+    sprBaselineBarrels: number;
+  } | null;
 }
 
 interface SPRDay {
@@ -49,7 +85,7 @@ interface TelemetryData {
   routes: { type: string; features: RouteFeature[] };
   nodes: { type: string; features: NodeFeature[] };
   vessels: VesselPosition[];
-  regionalPorts?: any[];
+  regionalPorts?: unknown[];
 }
 
 interface RouteFeature {
@@ -70,17 +106,11 @@ interface VesselPosition {
   cargo_type: string; destination: string; status: "UNDERWAY" | "AT_ANCHOR" | "REROUTING"; route_id: string;
 }
 
-interface RiskAssessment {
-  impacted_chokepoint: string; threat_level: ThreatLevel; risk_score: number;
-  event_summary: string; recommended_action: string; affected_suppliers: string[];
-  estimated_disruption_days: number; india_impact_severity: string;
-}
 
-// ── Baseline ───────────────────────────────────────────────
 
 const makeBaseline = (): SimulationData => ({
   scenario: { id: "BASELINE", label: "Baseline (No Disruption)", description: "All supply lanes operational.", threat_level: "LOW", risk_score: 0.05 },
-  rerouting: { blockedBPD: 0, activeBPD: 4400000, unservedBPD: 0, supplyDeficitPct: 0, avgRerouteCostIncrease: 0, avgRerouteDelayDays: 0, routeCount: 9, reroutedCount: 0, blockedCount: 0 },
+  rerouting: { blockedBPD: 0, activeBPD: 4400000, unservedBPD: 0, supplyDeficitPct: 0, avgRerouteCostIncrease: 0, avgRerouteDelayDays: 0, routeCount: 9, reroutedCount: 0, blockedCount: 0, top3Alternatives: [] },
   spr: {
     initialBarrels: 47500000, initialDays: 9.5, exhaustionDayUnmitigated: null, exhaustionDayRerouted: null, daysSaved: 0,
     trajectoryUnmitigated: Array.from({ length: 16 }, (_, i) => ({ day: i, date: "", reserveBarrels: 47500000, reserveDays: 9.5, pctRemaining: 100, drawdownBarrels: 0, alertStatus: "NORMAL" })),
@@ -88,6 +118,9 @@ const makeBaseline = (): SimulationData => ({
   },
   macro: { supplyDeficitBPD: 0, supplyDeficitPct: 0, fuelPriceSpikePercentage: 0, refineryRunRateDropPct: 0, dailyGDPLossUSD: 0, fifteenDayGDPLossUSD: 0, fuelPriceSpikeLabel: "+0.0%", gdpLossLabel: "$0", refineryHitLabel: "-0.0%", supplyDeficitLabel: "0.0%", macroAlertLevel: "LOW", crudePriceBreakevenUSD: 80, additionalImportCostPerDay: 0, dailyImpactSeries: [] },
   network: { nodes: [], edges: [] },
+  signalToRecommendationMs: null,
+  sensitivityBand: null,
+  assumptions: null,
 });
 
 // ── Panel registry ─────────────────────────────────────────
@@ -117,22 +150,67 @@ export default function KavachCommandCenter() {
   const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [visiblePanels, setVisiblePanels] = useState<PanelId[]>([]);
+  const [signalToRecommendationMs, setSignalToRecommendationMs] = useState<number | null>(null);
 
   const telemetryInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // ── Simulation ────────────────────────────────────────────
+  // ── Simulation (preset) ───────────────────────────────────
 
   const runSimulation = useCallback(async (scenarioId: ScenarioId) => {
     setIsSimulating(true);
     setIsMapLoading(true);
     try {
       const [simRes, telRes] = await Promise.all([
-        fetch("/api/engine/simulate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenarioId }) }),
+        fetch("/api/engine/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "preset", scenarioId }),
+        }),
         fetch(`/api/fleet/telemetry?scenario=${scenarioId}&t=${Date.now()}`),
       ]);
       const [simJson, telJson] = await Promise.all([simRes.json(), telRes.json()]);
       setSimData(simJson);
       setTelemetry(telJson);
+      setSignalToRecommendationMs(null);
+    } catch (err) { console.error(err); }
+    finally { setIsSimulating(false); setIsMapLoading(false); }
+  }, []);
+
+  // ── Simulation (dynamic — from AI signal) ─────────────────
+
+  const runDynamicSimulation = useCallback(async (
+    assessment: RiskAssessment,
+    signalTimestamp: number,
+    label?: string
+  ) => {
+    const blockedNodes = chokepointToNodeIds(assessment as Parameters<typeof chokepointToNodeIds>[0]);
+    setIsSimulating(true);
+    setIsMapLoading(true);
+    try {
+      const [simRes, telRes] = await Promise.all([
+        fetch("/api/engine/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "dynamic",
+            signalTimestamp,
+            dynamicInput: {
+              blocked_nodes: blockedNodes,
+              risk_score: assessment.risk_score,
+              threat_level: assessment.threat_level,
+              label: label ?? buildDynamicScenarioLabel(assessment as Parameters<typeof buildDynamicScenarioLabel>[0]),
+              description: assessment.event_summary,
+            },
+          }),
+        }),
+        fetch(`/api/fleet/telemetry?scenario=BASELINE&blockedNodes=${blockedNodes.join(",")}&t=${Date.now()}`),
+      ]);
+      const [simJson, telJson] = await Promise.all([simRes.json(), telRes.json()]);
+      setSimData(simJson);
+      setTelemetry(telJson);
+      if (simJson.signalToRecommendationMs) {
+        setSignalToRecommendationMs(simJson.signalToRecommendationMs);
+      }
     } catch (err) { console.error(err); }
     finally { setIsSimulating(false); setIsMapLoading(false); }
   }, []);
@@ -150,24 +228,56 @@ export default function KavachCommandCenter() {
     setActiveScenario(id);
     setExecutiveBrief("");
     setRiskAssessment(null);
+    setSignalToRecommendationMs(null);
     runSimulation(id);
   }, [runSimulation]);
 
-  // ── AI Analysis ───────────────────────────────────────────
+  // ── AI Analysis (manual paste) ────────────────────────────
 
   const handleAnalyze = useCallback(async (text: string) => {
     if (!text.trim()) return;
     setIsAnalyzing(true);
+    const signalTimestamp = Date.now();
     try {
       const res = await fetch("/api/ingestion/news", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ news: text }),
       });
       const json = await res.json();
-      if (json.success) setRiskAssessment(json.assessment);
+      if (json.success) {
+        const assessment = json.assessment as RiskAssessment;
+        setRiskAssessment(assessment);
+
+        // Auto-trigger simulation if risk is above MEDIUM threshold
+        if (assessment.risk_score >= RISK_THRESHOLDS.MEDIUM) {
+          await runDynamicSimulation(assessment, signalTimestamp);
+        }
+      }
     } catch (err) { console.error(err); }
     finally { setIsAnalyzing(false); }
-  }, []);
+  }, [runDynamicSimulation]);
+
+  // ── Live Feed (auto-ingest from GDELT) ────────────────────
+
+  const handleHighRiskLiveAlert = useCallback((alert: LiveAlert) => {
+    // Surface the assessment in the UI
+    setRiskAssessment(alert.assessment);
+    // Auto-trigger simulate for high-risk alerts
+    if (alert.assessment.risk_score >= RISK_THRESHOLDS.HIGH) {
+      const signalTimestamp = new Date(alert.publishedAt).getTime() || Date.now();
+      runDynamicSimulation(
+        alert.assessment,
+        signalTimestamp,
+        alert.title
+      );
+    }
+  }, [runDynamicSimulation]);
+
+  const { liveAlerts, latestDetectionMs, isPolling } = useNewsFeed({
+    onHighRiskAlert: handleHighRiskLiveAlert,
+  });
+
+  // ── Executive brief ───────────────────────────────────────
 
   const handleGenerateBrief = useCallback(async () => {
     setIsGeneratingBrief(true);
@@ -197,7 +307,7 @@ export default function KavachCommandCenter() {
 
   const currentThreat: ThreatLevel = simData.scenario.threat_level ?? "LOW";
   const sprLastDay = simData.spr.trajectoryRerouted.at(-1);
-  const blockedNodes: string[] = [...(SCENARIOS[activeScenario].blocked_nodes ?? [])];
+  const blockedNodes: string[] = [...(SCENARIOS[activeScenario]?.blocked_nodes ?? [])];
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-slate-900">
@@ -225,6 +335,7 @@ export default function KavachCommandCenter() {
         visiblePanels={visiblePanels}
         onTogglePanel={togglePanel}
         allPanels={ALL_PANELS as unknown as Array<{ id: string; label: string }>}
+        signalToRecommendationMs={signalToRecommendationMs}
       />
 
       {/* ── Floating Widgets ─────────────────────────────── */}
@@ -250,7 +361,7 @@ export default function KavachCommandCenter() {
         title="Risk Intelligence"
         icon={<Shield className="w-3.5 h-3.5" />}
         defaultPosition={{ x: 16, y: 420 }}
-        defaultWidth={290}
+        defaultWidth={300}
         accentColor="#1e3a8a"
         onClose={() => togglePanel("risk")}
         visible={visiblePanels.includes("risk")}
@@ -269,6 +380,7 @@ export default function KavachCommandCenter() {
           refineryHitLabel={simData.macro.refineryHitLabel}
           gdpLossLabel={simData.macro.gdpLossLabel}
           macroAlertLevel={simData.macro.macroAlertLevel}
+          alternatives={simData.rerouting.top3Alternatives}
         />
       </DraggableWidget>
 
@@ -324,6 +436,9 @@ export default function KavachCommandCenter() {
           onAnalyze={handleAnalyze}
           onOpenBrief={() => { setIsBriefOpen(true); if (!executiveBrief) handleGenerateBrief(); }}
           isAnalyzing={isAnalyzing}
+          liveAlerts={liveAlerts}
+          latestDetectionMs={latestDetectionMs}
+          isPolling={isPolling}
         />
       </DraggableWidget>
 
@@ -349,6 +464,10 @@ export default function KavachCommandCenter() {
         executiveBrief={executiveBrief}
         isGenerating={isGeneratingBrief}
         onGenerateBrief={handleGenerateBrief}
+        signalToRecommendationMs={signalToRecommendationMs}
+        sensitivityBand={simData.sensitivityBand}
+        assumptions={simData.assumptions}
+        estimatedDisruptionDays={riskAssessment?.estimated_disruption_days}
       />
     </div>
   );
@@ -376,7 +495,7 @@ SPR cover: ~${sprDays.toFixed(1)} days remaining. Fuel prices projected +${simDa
 ## RECOMMENDED ACTIONS
 
 • **Immediate:** Activate SPR drawdown from Vizag + Padur sites to bridge ${(simData.rerouting.unservedBPD / 1000).toFixed(0)}K BPD gap
-• **72-hour:** Emergency spot procurement — Nigeria, US Gulf Coast, Latin America
+• **72-hour:** Emergency spot procurement — Nigeria (Bonny), Angola (Cabinda), US Gulf Coast (Houston)
 • **Strategic:** Cape of Good Hope maritime clearances + Indian Navy escort protocols
 
 ## STRATEGIC OUTLOOK

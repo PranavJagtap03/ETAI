@@ -128,7 +128,7 @@ export function SPRPanel({
       <div>
         <p className="text-xs font-semibold text-slate-600 mb-1.5">15-Day Drawdown</p>
         <div style={{ height: 110 }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
             <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="spu" x1="0" y1="0" x2="0" y2="1">

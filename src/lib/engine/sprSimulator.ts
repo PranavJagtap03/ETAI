@@ -56,22 +56,26 @@ export class SPRSimulator {
    * @param activeBPD_rerouted - supply BPD after rerouting is active
    * @param scenarioId - scenario identifier
    * @param startDate - simulation start date (defaults to today)
+   * @param overrides - optional assumption overrides
    */
   simulate(
     activeBPD_unmitigated: number,
     activeBPD_rerouted: number,
     scenarioId: string,
-    startDate: Date = new Date()
+    startDate: Date = new Date(),
+    overrides?: { domesticProductionPct?: number }
   ): SPRSimResult {
 
     const trajectoryUnmitigated = this._computeTrajectory(
       activeBPD_unmitigated,
-      startDate
+      startDate,
+      overrides?.domesticProductionPct
     );
 
     const trajectoryRerouted = this._computeTrajectory(
       activeBPD_rerouted,
-      startDate
+      startDate,
+      overrides?.domesticProductionPct
     );
 
     const exhaustionDayUnmitigated = this._findExhaustionDay(trajectoryUnmitigated);
@@ -117,9 +121,10 @@ export class SPRSimulator {
    */
   private _computeTrajectory(
     activeImportBPD: number,
-    startDate: Date
+    startDate: Date,
+    domesticProductionPct: number = 0.12
   ): SPRDayPoint[] {
-    const domesticProduction = INDIA_DAILY_DEMAND_BPD * 0.12; // ~12% domestic
+    const domesticProduction = INDIA_DAILY_DEMAND_BPD * domesticProductionPct; // ~12% domestic by default
     const totalActiveSupply = activeImportBPD + domesticProduction;
 
     let currentReserve = SPR_BASELINE_BARRELS;
@@ -179,20 +184,27 @@ export class SPRSimulator {
 
   /**
    * Compute unmitigated supply (zero active imports — worst case)
+   * @param domesticProductionPct - fraction of demand met by domestic production (default 0.12)
    */
-  static worstCaseSupplyBPD(): number {
+  static worstCaseSupplyBPD(domesticProductionPct: number = 0.12): number {
     // Only domestic production remains
-    return INDIA_DAILY_DEMAND_BPD * 0.12;
+    return INDIA_DAILY_DEMAND_BPD * domesticProductionPct;
   }
 
   /**
-   * Compute rerouted supply estimate given a supply deficit fraction
-   * Assumes rerouting recovers 60% of the disrupted supply
+   * Compute rerouted supply estimate given a supply deficit fraction.
+   * @param deficitPct - fraction of demand unmet
+   * @param rerouteRecoveryPct - fraction of disrupted supply recovered via rerouting (default 0.60)
+   * @param domesticProductionPct - fraction met domestically (default 0.12)
    */
-  static reroutedSupplyBPD(deficitPct: number): number {
-    const baseImportBPD = INDIA_DAILY_DEMAND_BPD * 0.88;
+  static reroutedSupplyBPD(
+    deficitPct: number,
+    rerouteRecoveryPct: number = 0.6,
+    domesticProductionPct: number = 0.12
+  ): number {
+    const baseImportBPD = INDIA_DAILY_DEMAND_BPD * (1 - domesticProductionPct);
     const disruptedBPD = baseImportBPD * deficitPct;
-    const recoveredBPD = disruptedBPD * 0.6; // 60% recovery via rerouting
+    const recoveredBPD = disruptedBPD * rerouteRecoveryPct;
     return baseImportBPD - disruptedBPD + recoveredBPD;
   }
 }

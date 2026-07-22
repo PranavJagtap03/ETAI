@@ -41,15 +41,9 @@ const TYPE_DWT: Record<string, string> = {
   "Aframax Product Tanker": "115K DWT"
 };
 
-// Mock supplemental fleet data
-const EXTRA_FLEET = [
-  { id: "V006", name: "Bharat Carrier", type: "VLCC" as const, cargo_type: "Sour Crude Oil", destination: "Jamnagar", status: "UNDERWAY" as const, speed_knots: 14.2, lat: 18, lng: 60 },
-  { id: "V007", name: "Gulf Sentinel", type: "Suezmax" as const, cargo_type: "Sweet Crude Oil", destination: "Mumbai", status: "UNDERWAY" as const, speed_knots: 13.5, lat: 15, lng: 65 },
-];
-
 export function FleetPanel({ vessels, blockedNodes }: FleetPanelProps) {
   const isHormuzBlocked = blockedNodes.includes("strait_of_hormuz");
-  const allVessels = [...vessels, ...EXTRA_FLEET];
+  const allVessels = vessels;
 
   const counts = {
     UNDERWAY: allVessels.filter((v) => v.status === "UNDERWAY").length,
